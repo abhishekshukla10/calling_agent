@@ -3,7 +3,16 @@ import json
 from datetime import datetime
 from groq import Groq
 from dotenv import load_dotenv
-from db import get_shipment, get_events, get_shipments_by_contact
+
+from db import (
+    get_shipment,
+    get_events,
+    get_shipments_by_contact,
+    get_shipments_by_customer_name,
+    get_shipments_by_eta,
+    get_shipments_by_dispatch
+)
+
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -60,6 +69,16 @@ def clean_events_data(events):
     return cleaned_events
 
 
+def clean_date_query_results(shipments, timestamp_field):
+    """Format datetime field in a list of shipment dicts"""
+    cleaned = []
+    for s in shipments:
+        clean_s = dict(s)  # copy the dict
+        clean_s[timestamp_field] = format_datetime(s.get(timestamp_field))
+        cleaned.append(clean_s)
+    return cleaned
+
+
 def get_system_prompt():
     return """
 You are intelligent shipment assistant.
@@ -74,6 +93,8 @@ PERSONALITY:
 RESPONSE RULES:
 - Use ONLY the data provided — never make up locations, ETAs, or status
 - If shipment is delayed → acknowledge + give reason + revised ETA
+- For search_by_name results: the search matches shipper OR customer name — if data is returned, it IS a valid match even if the exact field name shown differs from what user typed
+- If shipments list is empty → tell user no shipments found for that name/contact, ask them to verify spelling or try shipment number instead
 - If shipment stopped > 2 hours → flag it proactively
 - If ETA is within 2 hours → highlight it prominently
 - If data is missing → say "information not available" — never guess
@@ -90,6 +111,63 @@ STATUS MEANINGS:
 ESCALATION:
 - If user sounds frustrated across multiple messages → offer to connect to support team
 """
+
+
+def build_context(intent_data):
+    intent = intent_data.get("intent")
+
+    if intent == "shipment_status" and intent_data.get("shipment_no"):
+        shipment = get_shipment(intent_data["shipment_no"])
+        events = get_events(intent_data["shipment_no"])
+        return {
+            "shipment": clean_shipment_data(shipment),
+            "events": clean_events_data(events)
+        }
+
+    elif intent == "list_shipments" and intent_data.get("contact_no"):
+        shipments = get_shipments_by_contact(intent_data["contact_no"])
+        return {"shipments": shipments}
+
+    elif intent == "search_by_name" and intent_data.get("customer_name"):
+        shipments = get_shipments_by_customer_name(
+            intent_data["customer_name"])
+        return {
+            "search_term": intent_data["customer_name"],
+            "note": "Search matches either shipper_name (who sent it) or customer_name (who receives it)",
+            "shipments": shipments
+        }
+
+    elif intent == "eta_query":
+        shipments = get_shipments_by_eta(
+            intent_data.get("date_filter"),
+            intent_data.get("destination")
+        )
+        cleaned_shipments = clean_date_query_results(
+            shipments, "eta_timestamp")
+        return {
+            "query_type": "eta_query",
+            "date_searched": intent_data.get("date_filter"),
+            "destination_searched": intent_data.get("destination"),
+            "note": "These shipments are predicted to arrive on this date based on current ETA. Past deliveries are not included in this search.",
+            "shipments": cleaned_shipments
+        }
+
+    elif intent == "dispatch_query":
+        shipments = get_shipments_by_dispatch(
+            intent_data.get("date_filter"),
+            intent_data.get("origin")
+        )
+        cleaned_shipments = clean_date_query_results(
+            shipments, "event_timestamp")
+        return {
+            "query_type": "dispatch_query",
+            "date_searched": intent_data.get("date_filter"),
+            "origin_searched": intent_data.get("origin"),
+            "shipments": cleaned_shipments
+        }
+
+    else:
+        return {"message": "insufficient information"}
 
 
 def generate_response(intent_data, conversation_history):
@@ -118,41 +196,6 @@ def generate_response(intent_data, conversation_history):
     return response.choices[0].message.content.strip()
 
 
-def build_context(intent_data):
-    """Fetch relevant data based on intent"""
-    intent = intent_data.get("intent")
-
-    if intent == "shipment_status" and intent_data.get("shipment_no"):
-        shipment = get_shipment(intent_data["shipment_no"])
-        events = get_events(intent_data["shipment_no"])
-        return {
-            "shipment": clean_shipment_data(shipment),
-            "events": clean_events_data(events)
-        }
-
-    elif intent == "search_by_name" and intent_data.get("customer_name"):
-        # Search by customer name — returns list
-        return {
-            "message": f"Searching for shipments for {intent_data['customer_name']}",
-            "note": "customer name search not yet implemented in db.py"
-        }
-
-    elif intent == "list_shipments" and intent_data.get("contact_no"):
-        shipments = get_shipments_by_contact(intent_data["contact_no"])
-        return {"shipments": shipments}
-
-    elif intent in ["eta_query", "dispatch_query"]:
-        return {
-            "message": "Date based search",
-            "date_filter": intent_data.get("date_filter"),
-            "origin": intent_data.get("origin"),
-            "destination": intent_data.get("destination")
-        }
-
-    else:
-        return {"message": "insufficient information"}
-
-
 # Test block
 if __name__ == "__main__":
     from intent_parser import parse_intent
@@ -161,7 +204,14 @@ if __name__ == "__main__":
         "10002 kahan hai",
         "Tata Motors ka shipment dikhao",
         "mera number 9820012345 hai",
-        "where is my shipment"
+        "Reliance ka shipment dikhao",
+        "where is my shipment",
+        "Wipro ka status batao",
+        "12 June ko kaun se shipments pahuchenge",
+        "Mumbai se kal jo shipments gaye the",
+        "11 June ko Mumbai se kya gaya"
+
+
     ]
 
     for query in test_queries:
