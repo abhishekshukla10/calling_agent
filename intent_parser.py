@@ -32,7 +32,8 @@ INTENTS:
 
 ENTITIES TO EXTRACT:
 - shipment_no: numeric ID like 10001, 10002 (integer or null)
-- customer_name: company name like Tata Motors, Wipro (string or null)
+- customer_name: company name like Tata Motors, Wipro (strin\
+    g or null)
 - contact_no: 10 digit mobile number (string or null)
 - date_filter: convert relative dates to YYYY-MM-DD (string or null)
   - "aaj" or "today" = {today_date}
@@ -67,12 +68,62 @@ Output: {{"intent": "shipment_status", "shipment_no": null, "customer_name": nul
 
 RULES:
 - Always return all 7 keys — use null when not found
+- For list results (multiple shipments) → use compact format, one shipment per line
+- Never use bullet points with long sentences for lists — keep each entry to 2-3 lines max
 - confidence is "high" when entity clearly found, "low" when guessing
 - For company names correct minor spelling (tata motor = Tata Motors)
 - "gaye" or "roana" or "departed" = dispatch_query
 - "aane wale" or "pahunchne wale" or "arriving" = eta_query
 - Return ONLY JSON — no markdown, no backticks, no explanation
+
+
+OUTPUT FORMAT — SINGLE SHIPMENT:
+Use when user asks about one specific shipment (shipment_status intent).
+NEVER use paragraphs. Always use this structured card format:
+
+📦 Shipment #[no] | [origin] → [destination]
+
+🚚 Current Location:  [current_location]
+📍 Distance Left:     [distance_remaining] km
+🕐 ETA:               [eta formatted as DD Mon YYYY, HH:MM AM/PM]
+📊 Status:            [status with emoji]
+🏢 Shipper:           [shipper_name] → [customer_name]
+🚛 Truck:             [truck_no]
+
+📋 Recent Events:
+  • [event_type] at [location] — [DD Mon, HH:MM AM/PM]
+  • [event_type] at [location] — [DD Mon, HH:MM AM/PM]
+
+⚠ Alerts: [if stopped >2hrs or delayed write reason, else write None]
+
+OUTPUT FORMAT — MULTIPLE SHIPMENTS:
+Use when returning 2 or more shipments (list_shipments, search_by_name, dispatch_query, eta_query intents).
+NEVER use paragraphs or numbered lists.
+ALWAYS use this exact compact format:
+
+Found [X] shipments. Here are the details:
+
+📦 #[no] | [origin] → [destination] | [Status emoji] | [shipper] → [customer]
+📦 #[no] | [origin] → [destination] | [Status emoji] | [shipper] → [customer]
+
+⚠ Shipments #[nos] need attention. (only if any stopped or delayed)
+Want details on any specific shipment?
+
+CRITICAL FORMAT RULES:
+- NEVER mix formats — structured card for single, compact list for multiple
+- NEVER summarize multiple shipments into a paragraph
+- Use numbered list with 📦 emoji — one compact line per shipment
+- NEVER omit shipments from the list — show every single one
+- For delivered shipments in single format — show POD signed event in Recent Events
+- For Hindi queries — respond in Hindi but keep the structured format with English field labels
 """
+
+
+MODELS = [
+    "llama-3.3-70b-versatile",  # primary
+    "llama3-8b-8192",           # fallback
+]
+# intent_parser.py
 
 
 def parse_intent(user_message):
@@ -86,11 +137,10 @@ def parse_intent(user_message):
             temperature=0,
             max_tokens=200
         )
-
         raw = response.choices[0].message.content.strip()
         return json.loads(raw)
 
-    except json.JSONDecodeError:
+    except Exception as e:
         return {
             "intent": "unknown",
             "shipment_no": None,

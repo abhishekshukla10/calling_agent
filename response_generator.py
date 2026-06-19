@@ -81,8 +81,17 @@ def clean_date_query_results(shipments, timestamp_field):
 
 def get_system_prompt():
     return """
-You are intelligent shipment assistant.
+
+CRITICAL INSTRUCTION — READ FIRST:
+You must ALWAYS follow the exact output formats defined below.
+Never use paragraphs for multiple shipments.
+Never summarize a list into sentences.
+Violating the format rules is not acceptable under any circumstances.
+
+You are a smart, professional shipment tracking assistan    
 You help shippers and logistics managers track their shipments.
+
+
 
 PERSONALITY:
 - Professional but warm
@@ -170,30 +179,39 @@ def build_context(intent_data):
         return {"message": "insufficient information"}
 
 
-def generate_response(intent_data, conversation_history):
+MODELS = [
+    "llama-3.3-70b-versatile",  # primary
+    "llama3-8b-8192",           # fallback
+]
 
-    # Step 1: Fetch and clean data based on intent
+# response_generator.py
+
+
+def generate_response(intent_data, conversation_history):
     context = build_context(intent_data)
 
-    # Step 2: Build messages for Groq
     messages = [
         {"role": "system", "content": get_system_prompt()},
-        *conversation_history[-6:],  # last 6 turns for memory
+        *conversation_history[-6:],
         {"role": "user", "content": f"""
         User Intent: {json.dumps(intent_data)}
         Shipment Data: {json.dumps(context)}
         """}
     ]
 
-    # Step 3: Call Groq
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.3,
-        max_tokens=300
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.3,
+            max_tokens=500
+        )
+        return response.choices[0].message.content.strip()
 
-    return response.choices[0].message.content.strip()
+    except Exception as e:
+        if "rate_limit" in str(e).lower() or "429" in str(e):
+            return "I'm experiencing high demand right now. Please try again in a few minutes. 🙏"
+        return "Something went wrong. Please try again."
 
 
 # Test block
@@ -209,7 +227,7 @@ if __name__ == "__main__":
         "Wipro ka status batao",
         "12 June ko kaun se shipments pahuchenge",
         "Mumbai se kal jo shipments gaye the",
-        "11 June ko Mumbai se kya gaya"
+        "18 June ko Mumbai se kya gaya"
 
 
     ]
