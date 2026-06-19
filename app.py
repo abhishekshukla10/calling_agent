@@ -98,8 +98,8 @@ if prompt:
         )
 
     # Show bot response
-    with st.chat_message("assistant"):
-        st.markdown(response)
+    with st.chat_message("assistant", avatar="🚚"):
+        st.markdown(response, unsafe_allow_html=False)
     st.session_state.messages.append(
         {"role": "assistant", "content": response})
 

@@ -189,7 +189,8 @@ def get_format_instruction(intent_data, context):
         - loading     → Loading
 
         End with: "⚠ Shipments #[nos] need attention." (only if stopped/delayed)
-        Then: "Want details on any specific shipment?"
+        Then a blank line, then: "Want details on any specific shipment?"
+        Always put blank lines between the list and the closing lines.
         NEVER use paragraphs. NEVER use bullet points.
         """
     # Single shipment
@@ -207,6 +208,7 @@ def get_format_instruction(intent_data, context):
         ⚠ Alerts: [reason if delayed/stopped, else None]
 
         STATUS text: In Transit / Delayed / Stopped / Delivered / Loading
+        Each field MUST be on its own separate line with a blank line above it.
         Maximum 6 lines. No paragraphs.
         """
     # Insufficient info / confidence low
