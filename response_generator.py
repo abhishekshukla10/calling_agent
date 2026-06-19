@@ -81,44 +81,33 @@ def clean_date_query_results(shipments, timestamp_field):
 
 def get_system_prompt():
     return """
-
-CRITICAL INSTRUCTION — READ FIRST:
-You must ALWAYS follow the exact output formats defined below.
-Never use paragraphs for multiple shipments.
-Never summarize a list into sentences.
-Violating the format rules is not acceptable under any circumstances.
-
-You are a smart, professional shipment tracking assistan    
-You help shippers and logistics managers track their shipments.
-
-
+You are a smart, professional shipment tracking assistant.
+You understand Hindi, English, and Hinglish equally well.
 
 PERSONALITY:
 - Professional but warm
-- Concise — maximum 4 sentences unless detail is requested
+- Concise and structured
 - Empathetic when shipment is delayed or stopped
 - Proactive — mention important issues even if not asked
 
+STATUS EMOJIS:
+- in_transit  → In transit ✅
+- delayed     → Delayed ⚠
+- stopped     → Stopped 🔴
+- delivered   → Delivered ✅
+- loading     → Loading 🔄
+
 RESPONSE RULES:
-- Use ONLY the data provided — never make up locations, ETAs, or status
-- If shipment is delayed → acknowledge + give reason + revised ETA
-- For search_by_name results: the search matches shipper OR customer name — if data is returned, it IS a valid match even if the exact field name shown differs from what user typed
-- If shipments list is empty → tell user no shipments found for that name/contact, ask them to verify spelling or try shipment number instead
-- If shipment stopped > 2 hours → flag it proactively
-- If ETA is within 2 hours → highlight it prominently
-- If data is missing → say "information not available" — never guess
-- For confidence=low queries → politely ask for shipment number or contact number
-- Keep responses in the same language as user query (Hindi or English)
-
-STATUS MEANINGS:
-- in_transit → shipment is moving normally
-- delayed → shipment is behind schedule
-- stopped → shipment has halted unexpectedly
-- delivered → shipment has reached destination
-- loading → shipment is being prepared
-
-ESCALATION:
-- If user sounds frustrated across multiple messages → offer to connect to support team
+- Use ONLY the data provided — never guess or make up data
+- If shipments list is empty → tell user no shipments found, ask to verify
+- If shipment delayed → show reason + revised ETA
+- If shipment stopped > 2 hours → flag proactively
+- If ETA within 2 hours → highlight prominently
+- If data missing → say information not available
+- For confidence=low → ask for shipment number, contact number, or company name
+- Keep language same as user query — Hindi or English
+- search_by_name matches shipper OR customer — if data returned it IS valid
+- STRICTLY follow the output format instructions given at the end of each message
 """
 
 
@@ -179,13 +168,49 @@ def build_context(intent_data):
         return {"message": "insufficient information"}
 
 
-MODELS = [
-    "llama-3.3-70b-versatile",  # primary
-    "llama3-8b-8192",           # fallback
-]
+def get_format_instruction(intent_data, context):
+    intent = intent_data.get("intent")
+    shipments = context.get("shipments", [])
+
+    # Multiple shipments
+    if isinstance(shipments, list) and len(shipments) > 1:
+        return """
+        STRICT FORMAT — multiple shipments found.
+        Start with: "Found X shipments. Here are the details:"
+        Then list each one exactly like this:
+        1. 📦 #[no] | [origin] → [destination] | [status emoji] | [shipper] → [customer]
+        2. 📦 #[no] | [origin] → [destination] | [status emoji] | [shipper] → [customer]
+        End with: "⚠ Shipments #[nos] need attention." (if any stopped/delayed)
+        Then: "Want details on any specific shipment?"
+        NEVER use paragraphs. NEVER use bullet points.
+        """
+
+    # Single shipment
+    elif intent == "shipment_status" and context.get("shipment"):
+        return """
+        STRICT FORMAT — single shipment:
+
+        📦 #[no] | [origin] → [destination] | [status emoji]
+
+        📍 [current_location]
+        🕐 ETA: [DD Mon YYYY, HH:MM AM/PM]
+        🏢 [shipper] → [customer]
+
+        Last update: [most recent event] — [DD Mon, HH:MM AM/PM]
+        ⚠ Alerts: [reason if delayed/stopped, else None]
+
+        Maximum 6 lines total. No extra fields. No paragraphs.
+        """
+
+    # Insufficient info / confidence low
+    else:
+        return """
+        Politely ask for shipment number, contact number, or company name.
+        Keep it to 2 lines maximum.
+        """
+
 
 # response_generator.py
-
 
 def generate_response(intent_data, conversation_history):
     context = build_context(intent_data)
@@ -196,7 +221,9 @@ def generate_response(intent_data, conversation_history):
         {"role": "user", "content": f"""
         User Intent: {json.dumps(intent_data)}
         Shipment Data: {json.dumps(context)}
-        """}
+
+        {get_format_instruction(intent_data, context)}
+                """}
     ]
 
     try:
@@ -219,15 +246,8 @@ if __name__ == "__main__":
     from intent_parser import parse_intent
 
     test_queries = [
-        "10002 kahan hai",
-        "Tata Motors ka shipment dikhao",
-        "mera number 9820012345 hai",
-        "Reliance ka shipment dikhao",
-        "where is my shipment",
-        "Wipro ka status batao",
-        "12 June ko kaun se shipments pahuchenge",
-        "Mumbai se kal jo shipments gaye the",
-        "18 June ko Mumbai se kya gaya"
+        "Tata Motors ka shipment dikhao",  # multiple shipments — format test
+        "18 June ko Mumbai se kya gaya",
 
 
     ]

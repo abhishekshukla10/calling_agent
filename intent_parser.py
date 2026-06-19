@@ -44,15 +44,14 @@ ENTITIES TO EXTRACT:
 - origin: city where shipment departed from (string or null)
 
 EXAMPLES:
-
 User: "10002 kahan hai"
 Output: {{"intent": "shipment_status", "shipment_no": 10002, "customer_name": null, "contact_no": null, "date_filter": null, "origin": null, "destination": null, "confidence": "high"}}
 
-User: "Tata Motors ka shipment kahan pahuncha"
+User: "Tata Motors ka shipment dikhao"
 Output: {{"intent": "search_by_name", "shipment_no": null, "customer_name": "Tata Motors", "contact_no": null, "date_filter": null, "origin": null, "destination": null, "confidence": "high"}}
 
-User: "mera number 9820012345 hai shipment dikhao"
-Output: {{"intent": "list_shipments", "shipment_no": null, "customer_name": null, "contact_no": "9820012345", "date_filter": null, "origin": null, "destination": null, "confidence": "high"}}
+User: "where is my shipment"
+Output: {{"intent": "shipment_status", "shipment_no": null, "customer_name": null, "contact_no": null, "date_filter": null, "origin": null, "destination": null, "confidence": "low"}}
 
 User: "kal Mumbai pahunchne wale shipments kaun se hain"
 Output: {{"intent": "eta_query", "shipment_no": null, "customer_name": null, "contact_no": null, "date_filter": "{tomorrow_date}", "origin": null, "destination": "Mumbai", "confidence": "high"}}
@@ -60,11 +59,6 @@ Output: {{"intent": "eta_query", "shipment_no": null, "customer_name": null, "co
 User: "kal Delhi se jo shipments gaye the dikhao"
 Output: {{"intent": "dispatch_query", "shipment_no": null, "customer_name": null, "contact_no": null, "date_filter": "{yesterday_date}", "origin": "Delhi", "destination": null, "confidence": "high"}}
 
-User: "aaj Pune se kitne trucks gaye"
-Output: {{"intent": "dispatch_query", "shipment_no": null, "customer_name": null, "contact_no": null, "date_filter": "{today_date}", "origin": "Pune", "destination": null, "confidence": "high"}}
-
-User: "where is my shipment"
-Output: {{"intent": "shipment_status", "shipment_no": null, "customer_name": null, "contact_no": null, "date_filter": null, "origin": null, "destination": null, "confidence": "low"}}
 
 RULES:
 - Always return all 7 keys — use null when not found
@@ -119,10 +113,6 @@ CRITICAL FORMAT RULES:
 """
 
 
-MODELS = [
-    "llama-3.3-70b-versatile",  # primary
-    "llama3-8b-8192",           # fallback
-]
 # intent_parser.py
 
 

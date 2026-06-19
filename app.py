@@ -33,8 +33,8 @@ with st.sidebar:
         "🔴 Stopped — 10004": "10004 truck update do",
         "📋 List all shipments": "mera number 9820012345 hai",
         "🔍 Search by name": "Tata Motors ka shipment kahan hai",
-        "📅 ETA query": "12 June ko kaun se shipments pahuchenge",
-        "🚚 Dispatch query": "11 June ko Mumbai se kya gaya",
+        "📅 ETA query": "19 June ko kaun se shipments pahuchenge",
+        "🚚 Dispatch query": "18 June ko Mumbai se kya gaya",
         "❓ Vague query": "where is my shipment?"
 
     }
