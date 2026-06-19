@@ -29,8 +29,8 @@ with st.sidebar:
 
     scenarios = {
         "🟢 In transit — 10001": "10001 kahan hai?",
-        "🟡 Delayed — 10002": "10002 ka status batao",
-        "🔴 Stopped — 10004": "10004 truck update do",
+        "🟡 Delayed — 10011": "10011 ka status batao",
+        "🔴 Stopped — 10021": "10021 truck update do",
         "📋 List all shipments": "mera number 9820012345 hai",
         "🔍 Search by name": "Tata Motors ka shipment kahan hai",
         "📅 ETA query": "19 June ko kaun se shipments pahuchenge",
