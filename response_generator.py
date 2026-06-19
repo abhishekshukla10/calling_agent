@@ -178,19 +178,26 @@ def get_format_instruction(intent_data, context):
         STRICT FORMAT — multiple shipments found.
         Start with: "Found X shipments. Here are the details:"
         Then list each one exactly like this:
-        1. 📦 #[no] | [origin] → [destination] | [status emoji] | [shipper] → [customer]
-        2. 📦 #[no] | [origin] → [destination] | [status emoji] | [shipper] → [customer]
-        End with: "⚠ Shipments #[nos] need attention." (if any stopped/delayed)
+        1. 📦 #[no] | [origin] → [destination] | [STATUS] | [shipper] → [customer]
+        2. 📦 #[no] | [origin] → [destination] | [STATUS] | [shipper] → [customer]
+
+        STATUS must be plain text — not emojis:
+        - in_transit  → In Transit
+        - delayed     → Delayed ⚠
+        - stopped     → Stopped ❌
+        - delivered   → Delivered
+        - loading     → Loading
+
+        End with: "⚠ Shipments #[nos] need attention." (only if stopped/delayed)
         Then: "Want details on any specific shipment?"
         NEVER use paragraphs. NEVER use bullet points.
         """
-
     # Single shipment
     elif intent == "shipment_status" and context.get("shipment"):
         return """
         STRICT FORMAT — single shipment:
 
-        📦 #[no] | [origin] → [destination] | [status emoji]
+        📦 #[no] | [origin] → [destination] | [STATUS text]
 
         📍 [current_location]
         🕐 ETA: [DD Mon YYYY, HH:MM AM/PM]
@@ -199,9 +206,9 @@ def get_format_instruction(intent_data, context):
         Last update: [most recent event] — [DD Mon, HH:MM AM/PM]
         ⚠ Alerts: [reason if delayed/stopped, else None]
 
-        Maximum 6 lines total. No extra fields. No paragraphs.
+        STATUS text: In Transit / Delayed / Stopped / Delivered / Loading
+        Maximum 6 lines. No paragraphs.
         """
-
     # Insufficient info / confidence low
     else:
         return """
