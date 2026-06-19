@@ -32,8 +32,11 @@ with st.sidebar:
         "🟡 Delayed — 10002": "10002 ka status batao",
         "🔴 Stopped — 10004": "10004 truck update do",
         "📋 List all shipments": "mera number 9820012345 hai",
-        "❓ Vague query": "where is my shipment?",
-        "🎧 Escalate to human": "mujhe kisi se baat karni hai"
+        "🔍 Search by name": "Tata Motors ka shipment kahan hai",
+        "📅 ETA query": "12 June ko kaun se shipments pahuchenge",
+        "🚚 Dispatch query": "11 June ko Mumbai se kya gaya",
+        "❓ Vague query": "where is my shipment?"
+
     }
 
     for label, query in scenarios.items():
