@@ -197,6 +197,8 @@ def get_format_instruction(intent_data, context):
     elif intent == "shipment_status" and context.get("shipment"):
         return """
         STRICT FORMAT — single shipment:
+        Every field MUST have a blank line before and after it.
+        Use EXACTLY this format:
 
         📦 #[no] | [origin] → [destination] | [STATUS text]
 
@@ -208,8 +210,12 @@ def get_format_instruction(intent_data, context):
         ⚠ Alerts: [reason if delayed/stopped, else None]
 
         STATUS text: In Transit / Delayed / Stopped / Delivered / Loading
-        Each field MUST be on its own separate line with a blank line above it.
-        Maximum 6 lines. No paragraphs.
+        
+        CRITICAL RULES:
+        - Each field on its own line with ONE blank line above and below
+        - Never put two fields on the same line
+        - Never combine location + ETA + shipper on one line
+        - No paragraphs
         """
     # Insufficient info / confidence low
     else:
