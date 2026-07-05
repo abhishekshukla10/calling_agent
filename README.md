@@ -179,7 +179,6 @@ GitHub: [github.com/yourusername/track-shipment](https://github.com)
 I don't start with AI — I start with the operational problem. With 18 years of enterprise delivery across Logistics, SCM, Finance, Sales, HR, and Manufacturing, I bring a rare combination: deep domain knowledge, hands-on AI product development, and the ability to translate complex business challenges into practical, scalable AI solutions.
 Independently designed and built 6 enterprise AI products — RAG chatbots, agentic voice systems, multi-agent risk analyzers, and executive intelligence platforms — each starting with a real business problem — including a voice agent whose architecture was independently validated in production at ₹10→₹5.5 per call (45% saving). IIT Delhi certified in Data Science & Machine Learning. Proven at enterprise scale: 1→140 team, 20+ state operations, SAP TM, SAP MDG, and Salesforce CRM implementations across 7 legal entities and 5 countries.
 
-[LinkedIn →](#) · [GitHub →](#)
 
 ---
 
