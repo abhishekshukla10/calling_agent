@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 *.xlsx
 *.csv
+*.pyo
+.streamlit/secrets.toml
+test_bolna.py

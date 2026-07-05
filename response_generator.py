@@ -43,7 +43,9 @@ def clean_shipment_data(shipment):
         "truck_no": shipment["truck_no"],
         "current_location": shipment.get("current_location", "Not available"),
         "distance_remaining_km": shipment.get("distance_remaining", "Not available"),
-        "eta": format_datetime(shipment.get("eta_timestamp"))
+        "eta": format_datetime(shipment.get("eta_timestamp")),
+        "driver_mobile": shipment.get("driver_mobile"),
+        "delay_hours": shipment.get("delay_hours", 0)
     }
 
 
@@ -229,6 +231,7 @@ def get_format_instruction(intent_data, context):
 
 def generate_response(intent_data, conversation_history):
     context = build_context(intent_data)
+    shipment_data = context.get("shipment")
 
     messages = [
         {"role": "system", "content": get_system_prompt()},
@@ -248,12 +251,12 @@ def generate_response(intent_data, conversation_history):
             temperature=0.3,
             max_tokens=500
         )
-        return response.choices[0].message.content.strip()
+        return response.choices[0].message.content.strip(), shipment_data
 
     except Exception as e:
         if "rate_limit" in str(e).lower() or "429" in str(e):
-            return "I'm experiencing high demand right now. Please try again in a few minutes. 🙏"
-        return "Something went wrong. Please try again."
+            return "I'm experiencing high demand right now. Please try again in a few minutes. 🙏", None
+        return "Something went wrong. Please try again.", None
 
 
 # Test block

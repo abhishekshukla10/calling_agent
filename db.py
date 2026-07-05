@@ -146,10 +146,22 @@ def get_shipments_by_dispatch(date_filter, origin=None):
             AND DATE(te.event_timestamp) = %s
         """, (date_filter,))
 
-    results = cur.fetchall()
+
+def get_latest_call_log(shipment_no):
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT call_status, delay_reason, 
+               assistance_required, updated_eta, transcript
+        FROM call_logs
+        WHERE shipment_no = %s
+        ORDER BY call_datetime DESC
+        LIMIT 1
+    """, (shipment_no,))
+    result = cur.fetchone()
     cur.close()
     conn.close()
-    return [dict(r) for r in results]
+    return dict(result) if result else None
 
 
 # Quick test
