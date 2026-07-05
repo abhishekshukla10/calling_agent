@@ -8,7 +8,12 @@ load_dotenv()
 
 
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    try:
+        import streamlit as st
+        db_url = st.secrets["DATABASE_URL"]
+    except Exception:
+        db_url = os.getenv("DATABASE_URL")
+    return psycopg2.connect(db_url)
 
 
 def get_shipment(shipment_no):
